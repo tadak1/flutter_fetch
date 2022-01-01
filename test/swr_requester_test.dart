@@ -1,40 +1,34 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockserver/mockserver.dart';
 import 'package:swr_requester/swr_requester.dart';
 
-class TestResponse {
-  TestResponse({
-    required this.message,
-  });
-
-  String message;
-
-  @override
-  bool operator ==(Object other) {
-    return other is TestResponse && other.message == message;
-  }
-
-  @override
-  String toString() {
-    return "TestResponse("
-        "message: $message"
-        ")";
-  }
-
-  @override
-  int get hashCode => message.hashCode;
-}
-
-Fetcher<TestResponse> createResponseFetcher(String message) {
-  return (String uri) async {
-    return TestResponse(message: message);
-  };
-}
+import 'test_utilities/mock_server.dart';
+import 'test_utilities/test_model.dart';
 
 void main() {
+  setUpAll(() async {
+    final List<EndPoint> endPoints = [
+      TestEndpoint(
+        methodType: MethodType.get,
+        pathWithQueryParameter: '/test_path1',
+        responseBody: TestResponse(message: "AfterFetch").toJson(),
+      ),
+    ];
+
+    final MockServer mockServer = MockServer(
+      port: 18080,
+      endPoints: endPoints,
+    );
+    await mockServer.start();
+  });
+
   group("fetch", () {
     test('Emit null when absent cache, emit response after fetch', () async {
-      final result = fetch<TestResponse>(
-          "/test_path1", createResponseFetcher("AfterFetch"));
+      final requester = SWRRequester(cache: <String, dynamic>{});
+      final result = requester.fetch<TestResponse>(
+        "/test_path1",
+        createResponseFetcher("AfterFetch"),
+      );
 
       expect(
         result,
@@ -49,8 +43,9 @@ void main() {
     test(
         'Emit fallbackData when absent cache and fallbackData has benn set, emit response after fetch',
         () async {
-      final result = fetch<TestResponse>(
-        "/test_path2",
+      final requester = SWRRequester();
+      final result = requester.fetch<TestResponse>(
+        "/test_path1",
         createResponseFetcher("AfterFetch"),
         fallbackData: TestResponse(message: "FallbackData"),
       );
@@ -65,11 +60,16 @@ void main() {
         ),
       );
     });
+
     test('Emit cache when present cache, emit response after fetch', () async {
-      await for (var _ in fetch<TestResponse>(
-          "/test_path3", createResponseFetcher("CachedData"))) {}
-      final result = fetch<TestResponse>(
-          "/test_path3", createResponseFetcher("AfterFetch"));
+      final cache = <String, dynamic>{
+        "/test_path1": TestResponse(
+          message: "CachedData",
+        ),
+      };
+      final requester = SWRRequester(cache: cache);
+      final result = requester.fetch<TestResponse>(
+          "/test_path1", createResponseFetcher("AfterFetch"));
 
       expect(
         result,
