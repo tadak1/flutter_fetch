@@ -27,16 +27,26 @@ class SWRRequester {
     }
 
     try {
-      final resource = await fetcher(path);
-      _cache.update(
-        path,
-        (value) => resource,
-        ifAbsent: () => resource,
+      yield await _revalidate(
+        path: path,
+        fetcher: fetcher,
       );
-      yield resource;
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<T> _revalidate<T>({
+    required String path,
+    required Fetcher<T> fetcher,
+  }) async {
+    final resource = await fetcher(path);
+    _cache.update(
+      path,
+      (value) => resource,
+      ifAbsent: () => resource,
+    );
+    return resource;
   }
 
   T mutate<T>(String key, T value) {
