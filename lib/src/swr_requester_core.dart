@@ -1,8 +1,14 @@
-import 'dart:async' show Stream;
+import 'dart:async';
+
+import 'package:retry/retry.dart';
 
 final _defaultCache = <String, dynamic>{};
 
 typedef Fetcher<T> = Future<T> Function(String path);
+typedef OnRetryFunction = FutureOr<bool> Function(
+  String key,
+  Exception exception,
+);
 
 class SWRRequester {
   SWRRequester({
@@ -16,6 +22,9 @@ class SWRRequester {
     Fetcher<T> fetcher, {
     T? fallbackData,
     Map<dynamic, dynamic>? cache,
+    bool shouldRetry = false,
+    OnRetryFunction? onRetry,
+    int maxRetryAttempts = 5,
   }) async* {
     final cachedValue = _cache[path];
     if (cachedValue != null) {
@@ -26,13 +35,29 @@ class SWRRequester {
       yield null;
     }
 
-    try {
+    if (shouldRetry) {
+      yield await retry(
+        () async => await _revalidate(
+          path: path,
+          fetcher: fetcher,
+        ),
+        retryIf: (exception) async {
+          if (onRetry == null) {
+            throw exception;
+          }
+          final isCached = await onRetry(path, exception);
+          if (!isCached) {
+            throw exception;
+          }
+          return true;
+        },
+        maxAttempts: maxRetryAttempts,
+      );
+    } else {
       yield await _revalidate(
         path: path,
         fetcher: fetcher,
       );
-    } catch (e) {
-      rethrow;
     }
   }
 
