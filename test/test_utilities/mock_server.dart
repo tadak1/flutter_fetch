@@ -14,15 +14,15 @@ extension on MethodType {
   String get name {
     switch (this) {
       case MethodType.get:
-        return "GET";
+        return 'GET';
       case MethodType.post:
-        return "POST";
+        return 'POST';
       case MethodType.put:
-        return "PUT";
+        return 'PUT';
       case MethodType.patch:
-        return "PATH";
+        return 'PATH';
       case MethodType.delete:
-        return "DELETE";
+        return 'DELETE';
     }
   }
 }

@@ -9,13 +9,13 @@ class TestResponse {
     required this.message,
   });
 
-  String message;
-
   factory TestResponse.fromJson(Map<String, dynamic> json) {
     return TestResponse(
-      message: json["message"],
+      message: json['message'] as String,
     );
   }
+
+  String message;
 
   @override
   bool operator ==(Object other) {
@@ -24,14 +24,14 @@ class TestResponse {
 
   @override
   String toString() {
-    return "TestResponse("
-        "message: $message"
-        ")";
+    return 'TestResponse('
+        'message: $message'
+        ')';
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      "message": message,
+  Map<String, Object> toJson() {
+    return <String, Object>{
+      'message': message,
     };
   }
 
@@ -41,7 +41,7 @@ class TestResponse {
 
 Fetcher<TestResponse> createHttpRequestFetcher(String message) {
   return (String path) async {
-    final uri = Uri.parse("http://localhost:18080$path");
+    final uri = Uri.parse('http://localhost:18080$path');
     final response = await http.get(uri);
     final json =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -57,6 +57,6 @@ Fetcher<TestResponse> createRetryRequestFetcher(
     if (currentCount == targetCount) {
       return TestResponse(message: message);
     }
-    throw HttpException("Error $currentCount");
+    throw HttpException('Error $currentCount');
   };
 }

@@ -21,15 +21,15 @@ class SWRRequester {
     String path,
     Fetcher<T> fetcher, {
     T? fallbackData,
-    Map<dynamic, dynamic>? cache,
+    Map<String, dynamic>? cache,
     bool shouldRetry = false,
     OnRetryFunction? onRetry,
     int maxRetryAttempts = 5,
   }) async* {
-    final cachedValue = _cache[path];
+    final dynamic cachedValue = _cache[path];
     if (cachedValue != null) {
       yield cachedValue as T?;
-    } else if (cachedValue == null && fallbackData != null) {
+    } else if (fallbackData != null) {
       yield fallbackData;
     } else {
       yield null;
@@ -37,7 +37,7 @@ class SWRRequester {
 
     if (shouldRetry) {
       yield await retry(
-        () async => await _revalidate(
+        () async => _revalidate(
           path: path,
           fetcher: fetcher,
         ),
@@ -68,14 +68,15 @@ class SWRRequester {
     final resource = await fetcher(path);
     _cache.update(
       path,
-      (value) => resource,
+      (dynamic value) => resource,
       ifAbsent: () => resource,
     );
     return resource;
   }
 
   T mutate<T>(String key, T value) {
-    _cache.update(key, (value) => value, ifAbsent: () => value);
+    _cache.update(key, (dynamic value) => value,
+        ifAbsent: () => value as Object);
     return value;
   }
 }

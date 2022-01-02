@@ -9,56 +9,56 @@ import 'test_utilities/test_model.dart';
 
 void main() {
   setUpAll(() async {
-    final List<EndPoint> endPoints = [
+    final endPoints = <EndPoint>[
       TestEndpoint(
         methodType: MethodType.get,
         pathWithQueryParameter: '/test_path1',
-        responseBody: TestResponse(message: "AfterFetch").toJson(),
+        responseBody: TestResponse(message: 'AfterFetch').toJson(),
       ),
     ];
 
-    final MockServer mockServer = MockServer(
+    final mockServer = MockServer(
       port: 18080,
       endPoints: endPoints,
     );
     await mockServer.start();
   });
 
-  group("fetch", () {
-    group("stream", () {
+  group('fetch', () {
+    group('stream', () {
       test('Emit null when absent cache, emit response after fetch', () async {
         final requester = SWRRequester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
-          "/test_path1",
-          createHttpRequestFetcher("AfterFetch"),
+          '/test_path1',
+          createHttpRequestFetcher('AfterFetch'),
         );
 
         expect(
           result,
           emitsInAnyOrder(
-            [
+            <Object?>[
               null,
-              TestResponse(message: "AfterFetch"),
+              TestResponse(message: 'AfterFetch'),
             ],
           ),
         );
       });
       test(
-          'Emit fallbackData when absent cache and fallbackData has benn set, emit response after fetch',
-          () async {
+          'Emit fallbackData when absent cache and fallbackData has benn set,'
+          'emit response after fetch', () async {
         final requester = SWRRequester();
         final result = requester.fetch<TestResponse>(
-          "/test_path1",
-          createHttpRequestFetcher("AfterFetch"),
-          fallbackData: TestResponse(message: "FallbackData"),
+          '/test_path1',
+          createHttpRequestFetcher('AfterFetch'),
+          fallbackData: TestResponse(message: 'FallbackData'),
         );
 
         expect(
           result,
           emitsInAnyOrder(
-            [
-              TestResponse(message: "FallbackData"),
-              TestResponse(message: "AfterFetch"),
+            <Object>[
+              TestResponse(message: 'FallbackData'),
+              TestResponse(message: 'AfterFetch'),
             ],
           ),
         );
@@ -66,31 +66,31 @@ void main() {
       test('Emit cache when present cache, emit response after fetch',
           () async {
         final cache = <String, dynamic>{
-          "/test_path1": TestResponse(
-            message: "CachedData",
+          '/test_path1': TestResponse(
+            message: 'CachedData',
           ),
         };
         final requester = SWRRequester(cache: cache);
         final result = requester.fetch<TestResponse>(
-            "/test_path1", createHttpRequestFetcher("AfterFetch"));
+            '/test_path1', createHttpRequestFetcher('AfterFetch'));
 
         expect(
           result,
           emitsInOrder(
-            [
-              TestResponse(message: "CachedData"),
-              TestResponse(message: "AfterFetch"),
+            <Object>[
+              TestResponse(message: 'CachedData'),
+              TestResponse(message: 'AfterFetch'),
             ],
           ),
         );
       });
     });
-    group("retry", () {
-      test("Retry three times", () async {
-        final requester = SWRRequester(cache: {});
+    group('retry', () {
+      test('Retry three times', () async {
+        final requester = SWRRequester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
-          "/retry_test_path1",
-          createRetryRequestFetcher("RetryAfterFetch", 5),
+          '/retry_test_path1',
+          createRetryRequestFetcher('RetryAfterFetch', 5),
           maxRetryAttempts: 5,
           shouldRetry: true,
           onRetry: (_, exception) {
@@ -101,19 +101,19 @@ void main() {
         expect(
           result,
           emitsInOrder(
-            [
+            <Object?>[
               null,
-              TestResponse(message: "RetryAfterFetch"),
+              TestResponse(message: 'RetryAfterFetch'),
             ],
           ),
         );
       });
 
-      test("Throw error when retry count is insufficient", () async {
-        final requester = SWRRequester(cache: {});
+      test('Throw error when retry count is insufficient', () async {
+        final requester = SWRRequester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
-          "/retry_test_path1",
-          createRetryRequestFetcher("RetryAfterFetch", 5),
+          '/retry_test_path1',
+          createRetryRequestFetcher('RetryAfterFetch', 5),
           maxRetryAttempts: 4,
           shouldRetry: true,
           onRetry: (_, exception) {
@@ -124,7 +124,7 @@ void main() {
         expect(
           result,
           emitsInOrder(
-            [
+            <Object?>[
               null,
               emitsError(predicate((e) => e is HttpException)),
             ],
@@ -132,11 +132,11 @@ void main() {
         );
       });
 
-      test("Throw error when onRetry logic is wrong", () async {
-        final requester = SWRRequester(cache: {});
+      test('Throw error when onRetry logic is wrong', () async {
+        final requester = SWRRequester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
-          "/retry_test_path1",
-          createRetryRequestFetcher("RetryAfterFetch", 5),
+          '/retry_test_path1',
+          createRetryRequestFetcher('RetryAfterFetch', 5),
           maxRetryAttempts: 5,
           shouldRetry: true,
           onRetry: (_, exception) {
@@ -147,7 +147,7 @@ void main() {
         expect(
           result,
           emitsInOrder(
-            [
+            <Object?>[
               null,
               emitsError(predicate((e) => e is HttpException)),
             ],
@@ -155,11 +155,11 @@ void main() {
         );
       });
 
-      test("No retry when shouldRetry is disabled", () async {
-        final requester = SWRRequester(cache: {});
+      test('No retry when shouldRetry is disabled', () async {
+        final requester = SWRRequester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
-          "/retry_test_path1",
-          createRetryRequestFetcher("RetryAfterFetch", 3),
+          '/retry_test_path1',
+          createRetryRequestFetcher('RetryAfterFetch', 3),
           shouldRetry: false,
           maxRetryAttempts: 3,
           onRetry: (_, exception) {
@@ -170,7 +170,7 @@ void main() {
         expect(
           result,
           emitsInOrder(
-            [
+            <Object?>[
               null,
               emitsError(predicate((e) => e is HttpException)),
             ],
