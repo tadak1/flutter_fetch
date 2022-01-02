@@ -1,0 +1,4 @@
+name: swr_requester
+
+packages:
+  - packages/**
