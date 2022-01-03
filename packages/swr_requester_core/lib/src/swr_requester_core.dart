@@ -21,7 +21,6 @@ class SWRRequester {
     String path,
     Fetcher<T> fetcher, {
     T? fallbackData,
-    Map<String, dynamic>? cache,
     bool shouldRetry = false,
     OnRetryFunction? onRetry,
     int maxRetryAttempts = 5,
