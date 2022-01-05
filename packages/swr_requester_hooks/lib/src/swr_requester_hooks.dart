@@ -1,8 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:swr_requester/swr_requester.dart';
 
-ValueNotifier<T?> useSWRRequest<T>(
+ValueNotifier<AsyncSnapshot<T?>> useSWRRequest<T>(
   String path,
   Fetcher<T?> fetcher, {
   T? fallbackData,
@@ -11,7 +13,7 @@ ValueNotifier<T?> useSWRRequest<T>(
   OnRetryFunction? onRetry,
   int maxRetryAttempts = 5,
 }) {
-  final result = useState<T?>(null);
+  final result = useState(AsyncSnapshot<T?>.waiting());
   final requester = SWRRequester(cache: cache);
 
   useEffect(() {
@@ -25,7 +27,10 @@ ValueNotifier<T?> useSWRRequest<T>(
       maxRetryAttempts: maxRetryAttempts,
     )
         .listen((event) {
-      result.value = event;
+      result.value = AsyncSnapshot<T?>.withData(ConnectionState.active, event);
+    }, onError: (exception) {
+      result.value =
+          AsyncSnapshot<T?>.withError(ConnectionState.done, exception);
     });
     return () async {
       await subscription.cancel();

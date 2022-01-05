@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,15 +53,16 @@ void main() {
                 await Future.delayed(const Duration(seconds: 1));
                 return TestResponse(message: 'FetchedData');
               },
+              cache: {},
             );
-            if (response.value == null) {
+            if (!response.value.hasData) {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
             }
             return Text(
-              "${response.value?.message}",
+              "${response.value.data?.message}",
               textDirection: TextDirection.ltr,
             );
           }),
@@ -86,14 +89,14 @@ void main() {
                 message: 'CachedData',
               ),
             });
-            if (response.value == null) {
+            if (response.value.data == null) {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
             }
             return Text(
-              "${response.value?.message}",
+              "${response.value.data?.message}",
               textDirection: TextDirection.ltr,
             );
           }),
@@ -105,6 +108,47 @@ void main() {
         await Future.delayed(const Duration(seconds: 1));
         await tester.pumpAndSettle();
         expect(find.text("FetchedData"), findsOneWidget);
+      });
+    });
+
+    testWidgets('Show loading text and error text when throw exception',
+        (tester) async {
+      await tester.runAsync(() async {
+        await tester.pumpWidget(
+          HookBuilder(builder: (context) {
+            final response = useSWRRequest(
+              "/test_path1",
+              (path) async {
+                await Future.delayed(const Duration(seconds: 1));
+                throw const HttpException("Connection Error");
+              },
+              cache: {},
+              shouldRetry: false,
+            );
+            if (!response.value.hasData && response.value.hasError) {
+              final exception = response.value.error as HttpException?;
+              return Text(
+                exception?.message ?? "",
+                textDirection: TextDirection.ltr,
+              );
+            }
+            if (!response.value.hasData) {
+              return const Text(
+                "Loading",
+                textDirection: TextDirection.ltr,
+              );
+            }
+            return Text(
+              "${response.value.data?.message}",
+              textDirection: TextDirection.ltr,
+            );
+          }),
+        );
+
+        expect(find.text("Loading"), findsOneWidget);
+        await Future.delayed(const Duration(seconds: 1));
+        await tester.pumpAndSettle();
+        expect(find.text("Connection Error"), findsOneWidget);
       });
     });
   });
