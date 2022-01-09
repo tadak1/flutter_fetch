@@ -53,16 +53,17 @@ void main() {
                 await Future.delayed(const Duration(seconds: 1));
                 return TestResponse(message: 'FetchedData');
               },
+              [],
               cache: {},
             );
-            if (!response.value.hasData) {
+            if (!response.hasData) {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
             }
             return Text(
-              "${response.value.data?.message}",
+              "${response.data?.message}",
               textDirection: TextDirection.ltr,
             );
           }),
@@ -84,19 +85,19 @@ void main() {
             final response = useSWRRequest("/test_path1", (path) async {
               await Future.delayed(const Duration(seconds: 1));
               return TestResponse(message: 'FetchedData');
-            }, cache: <String, dynamic>{
+            }, [], cache: <String, dynamic>{
               '/test_path1': TestResponse(
                 message: 'CachedData',
               ),
             });
-            if (response.value.data == null) {
+            if (response.data == null) {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
             }
             return Text(
-              "${response.value.data?.message}",
+              "${response.data?.message}",
               textDirection: TextDirection.ltr,
             );
           }),
@@ -122,24 +123,25 @@ void main() {
                 await Future.delayed(const Duration(seconds: 1));
                 throw const HttpException("Connection Error");
               },
+              [],
               cache: {},
               shouldRetry: false,
             );
-            if (!response.value.hasData && response.value.hasError) {
-              final exception = response.value.error as HttpException?;
+            if (!response.hasData && response.hasError) {
+              final exception = response.error as HttpException?;
               return Text(
                 exception?.message ?? "",
                 textDirection: TextDirection.ltr,
               );
             }
-            if (!response.value.hasData) {
+            if (!response.hasData) {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
             }
             return Text(
-              "${response.value.data?.message}",
+              "${response.data?.message}",
               textDirection: TextDirection.ltr,
             );
           }),
