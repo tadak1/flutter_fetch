@@ -8,8 +8,8 @@ import 'package:swr_requester/swr_requester.dart';
 
 AsyncSnapshot<T?> useSWRRequest<T>(
   String path,
-  Fetcher<T> fetcher,
-  List<Object?>? keys, {
+  Fetcher<T> fetcher, {
+  Iterable<Object?> additionalKeys = const [],
   T? fallbackData,
   Map<String, dynamic>? cache,
   bool shouldRetry = false,
@@ -20,17 +20,25 @@ AsyncSnapshot<T?> useSWRRequest<T>(
     path: path,
     fetcher: fetcher,
     cache: cache,
-    keys: keys,
+    additionalKeys: additionalKeys,
+    fallbackData: fallbackData,
+    shouldRetry: shouldRetry,
+    onRetry: onRetry,
+    maxRetryAttempts: maxRetryAttempts,
   ));
 }
 
 class _SWRStateHook<T> extends Hook<AsyncSnapshot<T?>> {
-  const _SWRStateHook({
+  _SWRStateHook({
     required this.path,
     required this.fetcher,
     required this.cache,
-    List<Object?>? keys,
-  }) : super(keys: keys);
+    required Iterable<Object?> additionalKeys,
+    required T? fallbackData,
+    required bool shouldRetry,
+    required OnRetryFunction? onRetry,
+    required int maxRetryAttempts,
+  }) : super(keys: [path, ...additionalKeys]);
 
   final String path;
   final Fetcher<T> fetcher;
