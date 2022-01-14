@@ -53,7 +53,6 @@ void main() {
                 await Future.delayed(const Duration(seconds: 1));
                 return TestResponse(message: 'FetchedData');
               },
-              [],
               cache: {},
             );
             if (!response.hasData) {
@@ -85,7 +84,7 @@ void main() {
             final response = useSWRRequest("/test_path1", (path) async {
               await Future.delayed(const Duration(seconds: 1));
               return TestResponse(message: 'FetchedData');
-            }, [], cache: <String, dynamic>{
+            }, cache: <String, dynamic>{
               '/test_path1': TestResponse(
                 message: 'CachedData',
               ),
@@ -123,7 +122,6 @@ void main() {
                 await Future.delayed(const Duration(seconds: 1));
                 throw const HttpException("Connection Error");
               },
-              [],
               cache: {},
               shouldRetry: false,
             );
