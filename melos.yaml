@@ -2,3 +2,11 @@ name: flutter_fetch
 
 packages:
   - packages/**
+
+scripts:
+  test:
+    run: |
+      melos exec -c 6 --fail-fast -- "flutter test"
+  analyze:
+    run: |
+      melos exec -c 6 --fail-fast -- "flutter analyze"
