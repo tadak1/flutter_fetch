@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_fetch/flutter_fetch.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:swr_requester/swr_requester.dart';
 
 AsyncSnapshot<T?> useSWRRequest<T>(
   String path,
@@ -56,7 +56,7 @@ class _SWRStateHookState<T>
   @override
   void initHook() {
     super.initHook();
-    final requester = SWRRequester(cache: hook.cache);
+    final requester = Requester(cache: hook.cache);
     subscription = requester
         .fetch(
       hook.path,

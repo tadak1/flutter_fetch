@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fetch_hooks/flutter_fetch_hooks.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:http/http.dart' as http;
-import 'package:swr_requester_hooks/swr_requester_hooks.dart';
 
 void main() {
   runApp(const MyApp());

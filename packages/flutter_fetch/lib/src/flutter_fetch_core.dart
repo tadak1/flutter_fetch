@@ -10,8 +10,8 @@ typedef OnRetryFunction = FutureOr<bool> Function(
   Exception exception,
 );
 
-class SWRRequester {
-  SWRRequester({
+class Requester {
+  Requester({
     Map<String, dynamic>? cache,
   }) : _cache = cache ?? _defaultCache;
 

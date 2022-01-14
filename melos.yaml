@@ -1,4 +1,4 @@
-name: swr_requester
+name: flutter_fetch
 
 packages:
   - packages/**

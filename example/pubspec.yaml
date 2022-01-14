@@ -31,8 +31,8 @@ dependencies:
     sdk: flutter
   flutter_hooks: ^0.18.2
   http: ^0.13.4
-  swr_requester_hooks:
-    path: ../packages/swr_requester_hooks
+  flutter_fetch_hooks:
+    path: ../packages/flutter_fetch_hooks
 
 
 

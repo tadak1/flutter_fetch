@@ -1,4 +1,4 @@
-name: swr_requester_hooks
+name: flutter_fetch_hooks
 description: A new Flutter project.
 version: 0.0.1
 homepage:
@@ -11,8 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_hooks: 0.18.2
-  swr_requester:
-    path: "../swr_requester"
+  flutter_fetch:
+    path: "../flutter_fetch"
 
 dev_dependencies:
   flutter_test:

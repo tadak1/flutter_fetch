@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:flutter_fetch/flutter_fetch.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockserver/mockserver.dart';
-import 'package:swr_requester/swr_requester.dart';
 
 import 'test_utilities/mock_server.dart';
 import 'test_utilities/test_model.dart';
@@ -27,7 +27,7 @@ void main() {
   group('fetch', () {
     group('stream', () {
       test('Emit null when absent cache, emit response after fetch', () async {
-        final requester = SWRRequester(cache: <String, dynamic>{});
+        final requester = Requester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
           '/test_path1',
           createHttpRequestFetcher('AfterFetch'),
@@ -46,7 +46,7 @@ void main() {
       test(
           'Emit fallbackData when absent cache and fallbackData has benn set,'
           'emit response after fetch', () async {
-        final requester = SWRRequester();
+        final requester = Requester();
         final result = requester.fetch<TestResponse>(
           '/test_path1',
           createHttpRequestFetcher('AfterFetch'),
@@ -70,7 +70,7 @@ void main() {
             message: 'CachedData',
           ),
         };
-        final requester = SWRRequester(cache: cache);
+        final requester = Requester(cache: cache);
         final result = requester.fetch<TestResponse>(
             '/test_path1', createHttpRequestFetcher('AfterFetch'));
 
@@ -87,7 +87,7 @@ void main() {
     });
     group('retry', () {
       test('Retry three times', () async {
-        final requester = SWRRequester(cache: <String, dynamic>{});
+        final requester = Requester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
           '/retry_test_path1',
           createRetryRequestFetcher('RetryAfterFetch', 5),
@@ -110,7 +110,7 @@ void main() {
       });
 
       test('Throw error when retry count is insufficient', () async {
-        final requester = SWRRequester(cache: <String, dynamic>{});
+        final requester = Requester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
           '/retry_test_path1',
           createRetryRequestFetcher('RetryAfterFetch', 5),
@@ -133,7 +133,7 @@ void main() {
       });
 
       test('Throw error when onRetry logic is wrong', () async {
-        final requester = SWRRequester(cache: <String, dynamic>{});
+        final requester = Requester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
           '/retry_test_path1',
           createRetryRequestFetcher('RetryAfterFetch', 5),
@@ -156,7 +156,7 @@ void main() {
       });
 
       test('No retry when shouldRetry is disabled', () async {
-        final requester = SWRRequester(cache: <String, dynamic>{});
+        final requester = Requester(cache: <String, dynamic>{});
         final result = requester.fetch<TestResponse>(
           '/retry_test_path1',
           createRetryRequestFetcher('RetryAfterFetch', 3),
