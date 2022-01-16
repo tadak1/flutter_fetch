@@ -13,6 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_hooks: 0.18.2
+  riverpod: ^1.0.3
   flutter_fetch:
     path: "../flutter_fetch"
 

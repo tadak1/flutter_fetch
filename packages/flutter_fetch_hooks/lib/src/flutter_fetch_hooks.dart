@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_fetch/flutter_fetch.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:riverpod/riverpod.dart';
 
-AsyncSnapshot<T?> useSWRRequest<T>(
+AsyncValue<T?> useSWRRequest<T>(
   String path,
   Fetcher<T> fetcher, {
   Iterable<Object?> additionalKeys = const [],
@@ -28,7 +29,7 @@ AsyncSnapshot<T?> useSWRRequest<T>(
   ));
 }
 
-class _SWRStateHook<T> extends Hook<AsyncSnapshot<T?>> {
+class _SWRStateHook<T> extends Hook<AsyncValue<T?>> {
   _SWRStateHook({
     required this.path,
     required this.fetcher,
@@ -49,8 +50,8 @@ class _SWRStateHook<T> extends Hook<AsyncSnapshot<T?>> {
 }
 
 class _SWRStateHookState<T>
-    extends HookState<AsyncSnapshot<T?>, _SWRStateHook<T?>> {
-  AsyncSnapshot<T?> _state = AsyncSnapshot<T?>.waiting();
+    extends HookState<AsyncValue<T?>, _SWRStateHook<T?>> {
+  AsyncValue<T?> _state = const AsyncValue.loading();
   StreamSubscription? subscription;
 
   @override
@@ -64,11 +65,11 @@ class _SWRStateHookState<T>
     )
         .listen((event) {
       setState(() {
-        _state = AsyncSnapshot<T?>.withData(ConnectionState.active, event);
+        _state = AsyncValue.data(event);
       });
     }, onError: (exception) {
       setState(() {
-        _state = AsyncSnapshot<T?>.withError(ConnectionState.active, exception);
+        _state = AsyncValue.error(exception);
       });
     });
   }
@@ -80,7 +81,7 @@ class _SWRStateHookState<T>
   }
 
   @override
-  AsyncSnapshot<T?> build(BuildContext context) => _state;
+  AsyncValue<T?> build(BuildContext context) => _state;
 
   @override
   Object? get debugValue => _state;

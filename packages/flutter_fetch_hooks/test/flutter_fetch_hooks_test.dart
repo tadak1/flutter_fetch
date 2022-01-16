@@ -1,9 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fetch_hooks/src/flutter_fetch_hooks.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_fetch_hooks/src/flutter_fetch_hooks.dart';
+import 'package:riverpod/riverpod.dart';
 
 class TestResponse {
   TestResponse({
@@ -55,16 +56,24 @@ void main() {
               },
               cache: {},
             );
-            if (!response.hasData) {
+
+            return response.when(data: (response) {
+              return Text(
+                "${response?.message}",
+                textDirection: TextDirection.ltr,
+              );
+            }, error: (exception, trace) {
+              final error = exception as HttpException?;
+              return Text(
+                error?.message ?? "",
+                textDirection: TextDirection.ltr,
+              );
+            }, loading: () {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
-            }
-            return Text(
-              "${response.data?.message}",
-              textDirection: TextDirection.ltr,
-            );
+            });
           }),
         );
 
@@ -89,16 +98,23 @@ void main() {
                 message: 'CachedData',
               ),
             });
-            if (response.data == null) {
+            return response.when(data: (response) {
+              return Text(
+                "${response?.message}",
+                textDirection: TextDirection.ltr,
+              );
+            }, error: (exception, trace) {
+              final error = exception as HttpException?;
+              return Text(
+                error?.message ?? "",
+                textDirection: TextDirection.ltr,
+              );
+            }, loading: () {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
-            }
-            return Text(
-              "${response.data?.message}",
-              textDirection: TextDirection.ltr,
-            );
+            });
           }),
         );
 
@@ -116,7 +132,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           HookBuilder(builder: (context) {
-            final response = useSWRRequest(
+            final response = useSWRRequest<TestResponse?>(
               "/test_path1",
               (path) async {
                 await Future.delayed(const Duration(seconds: 1));
@@ -125,23 +141,23 @@ void main() {
               cache: {},
               shouldRetry: false,
             );
-            if (!response.hasData && response.hasError) {
-              final exception = response.error as HttpException?;
+            return response.when(data: (response) {
               return Text(
-                exception?.message ?? "",
+                "${response?.message}",
                 textDirection: TextDirection.ltr,
               );
-            }
-            if (!response.hasData) {
+            }, error: (exception, trace) {
+              final error = exception as HttpException?;
+              return Text(
+                error?.message ?? "",
+                textDirection: TextDirection.ltr,
+              );
+            }, loading: () {
               return const Text(
                 "Loading",
                 textDirection: TextDirection.ltr,
               );
-            }
-            return Text(
-              "${response.data?.message}",
-              textDirection: TextDirection.ltr,
-            );
+            });
           }),
         );
 
