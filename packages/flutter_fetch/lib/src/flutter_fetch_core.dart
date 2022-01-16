@@ -35,20 +35,16 @@ class Requester {
     }
 
     if (shouldRetry) {
+      if (onRetry == null || maxRetryAttempts <= 0) {
+        throw ArgumentError('onRetry and maxRetryAttempts are not specified.');
+      }
       yield await retry(
         () async => _revalidate(
           path: path,
           fetcher: fetcher,
         ),
         retryIf: (exception) async {
-          if (onRetry == null) {
-            throw exception;
-          }
-          final isCached = await onRetry(path, exception);
-          if (!isCached) {
-            throw exception;
-          }
-          return true;
+          return await onRetry(path, exception);
         },
         maxAttempts: maxRetryAttempts,
       );

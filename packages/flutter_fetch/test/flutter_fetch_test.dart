@@ -177,6 +177,74 @@ void main() {
           ),
         );
       });
+
+      test(
+          'Throw error when maxRetryAttempts less than 0 and not specified onRetry',
+          () async {
+        final requester = Requester(cache: <String, dynamic>{});
+        final result = requester.fetch<TestResponse>(
+          '/retry_test_path1',
+          createRetryRequestFetcher('RetryAfterFetch', 3),
+          shouldRetry: true,
+        );
+
+        expect(
+          result,
+          emitsInOrder(
+            <Object?>[
+              null,
+              emitsError(predicate((e) => e is ArgumentError)),
+            ],
+          ),
+        );
+      });
+
+      test(
+          'Throw error when maxRetryAttempts less than equal 0 and specified onRetry',
+          () async {
+        final requester = Requester(cache: <String, dynamic>{});
+        final result = requester.fetch<TestResponse>(
+          '/retry_test_path1',
+          createRetryRequestFetcher('RetryAfterFetch', 3),
+          shouldRetry: true,
+          maxRetryAttempts: 0,
+          onRetry: (_, exception) {
+            return exception is HttpException;
+          },
+        );
+
+        expect(
+          result,
+          emitsInOrder(
+            <Object?>[
+              null,
+              emitsError(predicate((e) => e is ArgumentError)),
+            ],
+          ),
+        );
+      });
+
+      test(
+          'Throw error when maxRetryAttempts greater than equal 0 and not specified onRetry',
+          () async {
+        final requester = Requester(cache: <String, dynamic>{});
+        final result = requester.fetch<TestResponse>(
+          '/retry_test_path1',
+          createRetryRequestFetcher('RetryAfterFetch', 3),
+          shouldRetry: true,
+          maxRetryAttempts: 1,
+        );
+
+        expect(
+          result,
+          emitsInOrder(
+            <Object?>[
+              null,
+              emitsError(predicate((e) => e is ArgumentError)),
+            ],
+          ),
+        );
+      });
     });
   });
 }
