@@ -65,7 +65,8 @@ class _FetchStateHookState<T>
     )
         .listen((event) {
       setState(() {
-        _state = AsyncValue.data(event);
+        _state =
+            event != null ? AsyncValue.data(event) : const AsyncValue.loading();
       });
     }, onError: (exception) {
       setState(() {
