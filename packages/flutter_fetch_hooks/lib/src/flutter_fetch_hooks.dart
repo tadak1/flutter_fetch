@@ -7,7 +7,7 @@ import 'package:flutter_fetch/flutter_fetch.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:riverpod/riverpod.dart';
 
-AsyncValue<T?> useRevalidateFetch<T>(
+AsyncValue<T?> useFetch<T>(
   String path,
   Fetcher<T> fetcher, {
   Iterable<Object?> additionalKeys = const [],
@@ -17,7 +17,7 @@ AsyncValue<T?> useRevalidateFetch<T>(
   OnRetryFunction? onRetry,
   int maxRetryAttempts = 5,
 }) {
-  return use(_RevalidateFetchStateHook(
+  return use(_FetchStateHook(
     path: path,
     fetcher: fetcher,
     cache: cache,
@@ -29,8 +29,8 @@ AsyncValue<T?> useRevalidateFetch<T>(
   ));
 }
 
-class _RevalidateFetchStateHook<T> extends Hook<AsyncValue<T?>> {
-  _RevalidateFetchStateHook({
+class _FetchStateHook<T> extends Hook<AsyncValue<T?>> {
+  _FetchStateHook({
     required this.path,
     required this.fetcher,
     required this.cache,
@@ -46,12 +46,11 @@ class _RevalidateFetchStateHook<T> extends Hook<AsyncValue<T?>> {
   final Map<String, dynamic>? cache;
 
   @override
-  _RevalidateFetchStateHookState<T?> createState() =>
-      _RevalidateFetchStateHookState();
+  _FetchStateHookState<T?> createState() => _FetchStateHookState();
 }
 
-class _RevalidateFetchStateHookState<T>
-    extends HookState<AsyncValue<T?>, _RevalidateFetchStateHook<T?>> {
+class _FetchStateHookState<T>
+    extends HookState<AsyncValue<T?>, _FetchStateHook<T?>> {
   AsyncValue<T?> _state = const AsyncValue.loading();
   StreamSubscription? subscription;
 
@@ -88,5 +87,5 @@ class _RevalidateFetchStateHookState<T>
   Object? get debugValue => _state;
 
   @override
-  String get debugLabel => 'useRevalidateFetch<$T>';
+  String get debugLabel => 'useFetch<$T>';
 }
