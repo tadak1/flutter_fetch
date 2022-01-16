@@ -54,6 +54,9 @@ class _FetchStateHookState<T>
   @override
   void initHook() {
     super.initHook();
+    if (hook.path.isEmpty) {
+      return;
+    }
     final requester = Requester(cache: hook.cache);
     subscription = requester
         .fetch(
