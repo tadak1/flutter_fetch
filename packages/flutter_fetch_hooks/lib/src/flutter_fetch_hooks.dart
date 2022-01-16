@@ -10,7 +10,6 @@ import 'package:riverpod/riverpod.dart';
 AsyncValue<T?> useFetch<T>(
   String path,
   Fetcher<T> fetcher, {
-  Iterable<Object?> additionalKeys = const [],
   T? fallbackData,
   Map<String, dynamic>? cache,
   bool shouldRetry = false,
@@ -21,7 +20,6 @@ AsyncValue<T?> useFetch<T>(
     path: path,
     fetcher: fetcher,
     cache: cache,
-    additionalKeys: additionalKeys,
     fallbackData: fallbackData,
     shouldRetry: shouldRetry,
     onRetry: onRetry,
@@ -34,12 +32,11 @@ class _FetchStateHook<T> extends Hook<AsyncValue<T?>> {
     required this.path,
     required this.fetcher,
     required this.cache,
-    required Iterable<Object?> additionalKeys,
     required T? fallbackData,
     required bool shouldRetry,
     required OnRetryFunction? onRetry,
     required int maxRetryAttempts,
-  }) : super(keys: [path, ...additionalKeys]);
+  }) : super(keys: [path]);
 
   final String path;
   final Fetcher<T> fetcher;
