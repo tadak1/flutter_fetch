@@ -7,7 +7,7 @@ import 'package:flutter_fetch/flutter_fetch.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:riverpod/riverpod.dart';
 
-AsyncValue<T?> useSWRRequest<T>(
+AsyncValue<T?> useRevalidateFetch<T>(
   String path,
   Fetcher<T> fetcher, {
   Iterable<Object?> additionalKeys = const [],
@@ -17,7 +17,7 @@ AsyncValue<T?> useSWRRequest<T>(
   OnRetryFunction? onRetry,
   int maxRetryAttempts = 5,
 }) {
-  return use(_SWRStateHook(
+  return use(_RevalidateFetchStateHook(
     path: path,
     fetcher: fetcher,
     cache: cache,
@@ -29,8 +29,8 @@ AsyncValue<T?> useSWRRequest<T>(
   ));
 }
 
-class _SWRStateHook<T> extends Hook<AsyncValue<T?>> {
-  _SWRStateHook({
+class _RevalidateFetchStateHook<T> extends Hook<AsyncValue<T?>> {
+  _RevalidateFetchStateHook({
     required this.path,
     required this.fetcher,
     required this.cache,
@@ -46,11 +46,12 @@ class _SWRStateHook<T> extends Hook<AsyncValue<T?>> {
   final Map<String, dynamic>? cache;
 
   @override
-  _SWRStateHookState<T?> createState() => _SWRStateHookState();
+  _RevalidateFetchStateHookState<T?> createState() =>
+      _RevalidateFetchStateHookState();
 }
 
-class _SWRStateHookState<T>
-    extends HookState<AsyncValue<T?>, _SWRStateHook<T?>> {
+class _RevalidateFetchStateHookState<T>
+    extends HookState<AsyncValue<T?>, _RevalidateFetchStateHook<T?>> {
   AsyncValue<T?> _state = const AsyncValue.loading();
   StreamSubscription? subscription;
 
@@ -87,5 +88,5 @@ class _SWRStateHookState<T>
   Object? get debugValue => _state;
 
   @override
-  String get debugLabel => 'useSWRRequest<$T>';
+  String get debugLabel => 'useRevalidateFetch<$T>';
 }

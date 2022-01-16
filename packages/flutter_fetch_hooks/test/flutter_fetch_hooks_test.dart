@@ -48,7 +48,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           HookBuilder(builder: (context) {
-            final response = useSWRRequest(
+            final response = useRevalidateFetch(
               "/test_path1",
               (path) async {
                 await Future.delayed(const Duration(seconds: 1));
@@ -90,7 +90,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           HookBuilder(builder: (context) {
-            final response = useSWRRequest("/test_path1", (path) async {
+            final response = useRevalidateFetch("/test_path1", (path) async {
               await Future.delayed(const Duration(seconds: 1));
               return TestResponse(message: 'FetchedData');
             }, cache: <String, dynamic>{
@@ -132,7 +132,7 @@ void main() {
       await tester.runAsync(() async {
         await tester.pumpWidget(
           HookBuilder(builder: (context) {
-            final response = useSWRRequest<TestResponse?>(
+            final response = useRevalidateFetch<TestResponse?>(
               "/test_path1",
               (path) async {
                 await Future.delayed(const Duration(seconds: 1));
