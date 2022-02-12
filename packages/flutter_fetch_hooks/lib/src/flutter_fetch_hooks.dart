@@ -8,17 +8,16 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:retry/retry.dart';
 
-AsyncValue<T> useFetch<T>(
-  String path,
-  Fetcher<T> fetcher, {
-  T? fallbackData,
-  Map<String, dynamic>? cache,
-  FetchState? fetchState,
-  bool shouldRetry = false,
-  OnRetryFunction? onRetry,
-  int maxRetryAttempts = 5,
-  Duration deduplicationInterval = const Duration(seconds: 2),
-}) {
+AsyncValue<T> useFetch<T>(String path,
+    Fetcher<T> fetcher, {
+      T? fallbackData,
+      Map<String, dynamic>? cache,
+      FetchState? fetchState,
+      bool shouldRetry = false,
+      OnRetryFunction? onRetry,
+      int maxRetryAttempts = 5,
+      Duration deduplicationInterval = const Duration(seconds: 2),
+    }) {
   return use(_FetchStateHook(
     path: path,
     fetcher: fetcher,
@@ -36,18 +35,20 @@ class _FetchStateHook<T> extends Hook<AsyncValue<T>> {
   _FetchStateHook({
     required this.path,
     required this.fetcher,
-    required this.cache,
     required this.fetchState,
     required this.deduplicationInterval,
     required this.fallbackData,
+    required Map<String, dynamic>? cache,
     required bool shouldRetry,
     required OnRetryFunction? onRetry,
     required int maxRetryAttempts,
-  }) : super(keys: [path]);
+  })
+      : _cache = cache ?? defaultCache,
+        super(keys: [path]);
 
   final String path;
   final Fetcher<T> fetcher;
-  final Map<String, dynamic>? cache;
+  final Map<String, dynamic> _cache;
   final FetchState? fetchState;
   final Duration deduplicationInterval;
   final T? fallbackData;
@@ -55,6 +56,8 @@ class _FetchStateHook<T> extends Hook<AsyncValue<T>> {
   @override
   _FetchStateHookState<T> createState() => _FetchStateHookState();
 }
+
+final Map<String, dynamic> defaultCache = {};
 
 class _FetchStateHookState<T>
     extends HookState<AsyncValue<T>, _FetchStateHook<T>> {
@@ -82,17 +85,22 @@ class _FetchStateHookState<T>
     if (hook.path.isEmpty) {
       return;
     }
-    final state = hook.fetchState ?? FetchState.initialize();
+    final cache = hook._cache;
+    var fetchState = globalCache[cache];
+    if (fetchState == null) {
+      fetchState = FetchState.initialize();
+      globalCache[cache] = fetchState;
+    }
 
-    var updater = state.updaters[hook.path];
+    var updater = fetchState.updaters[hook.path];
     if (updater == null) {
       updater = StreamController.broadcast();
-      state.updaters.putIfAbsent(
+      fetchState.updaters.putIfAbsent(
         hook.path,
-        () => updater!,
+            () => updater!,
       );
     }
-    final dynamic cachedValue = hook.cache?[hook.path];
+    final dynamic cachedValue = hook._cache[hook.path];
     if (cachedValue != null) {
       _state = AsyncValue.data(cachedValue as T);
     } else if (hook.fallbackData != null) {
@@ -101,10 +109,9 @@ class _FetchStateHookState<T>
       _state = const AsyncValue.loading();
     }
 
-    subscription = updater.stream.asBroadcastStream().listen((event) {
+    subscription = updater.stream.listen((event) {
       setState(() {
-        _state =
-            event != null ? AsyncValue.data(event) : const AsyncValue.loading();
+        _state = AsyncValue.data(event);
       });
     }, onError: (exception) {
       setState(() {
@@ -112,7 +119,7 @@ class _FetchStateHookState<T>
       });
     });
 
-    var fetcher = state.fetchers[hook.path];
+    var fetcher = fetchState.fetchers[hook.path];
     if (fetcher == null) {
       updater.sink.addStream(
         revalidate(
@@ -120,29 +127,29 @@ class _FetchStateHookState<T>
           hook.fetcher,
         ),
       );
-      state.fetchers[hook.path] = DateTime.now();
+      fetchState.fetchers[hook.path] = DateTime.now();
       Timer(hook.deduplicationInterval, () {
-        state.fetchers.remove(hook.path);
+        fetchState?.fetchers.remove(hook.path);
       });
     }
   }
 
-  Stream<T> revalidate(
-    String path,
-    Fetcher<T> fetcher, {
-    bool shouldRetry = false,
-    OnRetryFunction? onRetry,
-    int maxRetryAttempts = 5,
-  }) async* {
+  Stream<T> revalidate(String path,
+      Fetcher<T> fetcher, {
+        bool shouldRetry = false,
+        OnRetryFunction? onRetry,
+        int maxRetryAttempts = 5,
+      }) async* {
     if (shouldRetry) {
       if (onRetry == null || maxRetryAttempts <= 0) {
         throw ArgumentError('onRetry and maxRetryAttempts are not specified.');
       }
       yield await retry(
-        () async => _revalidate(
-          path: path,
-          fetcher: fetcher,
-        ),
+            () async =>
+            _revalidate(
+              path: path,
+              fetcher: fetcher,
+            ),
         retryIf: (exception) async {
           return await onRetry(path, exception);
         },
@@ -161,21 +168,16 @@ class _FetchStateHookState<T>
     required Fetcher<T> fetcher,
   }) async {
     final resource = await fetcher(path);
-    hook.cache?.update(
+    hook._cache.update(
       path,
-      (dynamic value) => resource,
+          (dynamic value) => resource,
       ifAbsent: () => resource,
     );
     return resource;
   }
 }
 
-final globalFetchStateProvider = Provider((ref) {
-  return FetchState.initialize();
-});
-
 typedef Cache = Map<String, dynamic>;
-
 typedef GlobalCache = Map<Cache, FetchState>;
 
 class FetchState {
@@ -194,3 +196,8 @@ class FetchState {
   final Map<String, StreamController<dynamic>> updaters;
   final Map<String, DateTime> fetchers;
 }
+
+final GlobalCache globalCache = {};
+final fetchCacheProvider = Provider<Cache>((ref) {
+  return {};
+});
