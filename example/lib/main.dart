@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fetch/flutter_fetch.dart';
 import 'package:flutter_fetch_hooks/flutter_fetch_hooks.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:http/http.dart' as http;
@@ -19,16 +20,6 @@ class MyApp extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final requestPath = useState<String>(flutterRepositoryPath);
-    final response = useFetch(requestPath.value, (path) async {
-      final uri = Uri.https("api.github.com", path);
-      developer.log(
-        "Request to ${uri.toString()}",
-      );
-      final result = await http.get(uri);
-      await Future.delayed(const Duration(seconds: 2));
-      final Map<String, dynamic> json = jsonDecode(result.body);
-      return json;
-    });
     return MaterialApp(
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -37,20 +28,19 @@ class MyApp extends HookWidget {
         appBar: AppBar(
           title: const Text("Example"),
         ),
-        body: response.when(
-          data: (response) {
-            return Center(
-              child: Text(
-                response?["full_name"] ?? "",
+        body: Column(
+          children: [
+            Expanded(
+              child: ResponseDisplayWidget(
+                path: requestPath.value,
               ),
-            );
-          },
-          loading: () {
-            return const Text("Loading");
-          },
-          error: (Object error, StackTrace? stackTrace) {
-            return Text(error.toString());
-          },
+            ),
+            Expanded(
+              child: ResponseDisplayWidget(
+                path: requestPath.value,
+              ),
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
@@ -60,6 +50,65 @@ class MyApp extends HookWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+final fetchState = FetchState.initialize();
+final Map<String, dynamic> cache = {};
+
+class GithubModel {
+  GithubModel({
+    required this.fullName,
+  });
+
+  String fullName;
+
+  factory GithubModel.fromJson(Map<String, dynamic> json) {
+    return GithubModel(fullName: json["full_name"]);
+  }
+}
+
+class ResponseDisplayWidget extends HookWidget {
+  const ResponseDisplayWidget({
+    Key? key,
+    required this.path,
+  }) : super(key: key);
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final response = useFetch<GithubModel>(
+      path,
+          (path) async {
+        final uri = Uri.https("api.github.com", path);
+        developer.log(
+          "Request to ${uri.toString()}",
+        );
+        final result = await http.get(uri);
+        final Map<String, dynamic> json = jsonDecode(result.body);
+        return GithubModel.fromJson(json);
+      },
+      cache: cache,
+      fetchState: fetchState,
+      deduplicationInterval: const Duration(seconds: 5),
+    );
+    return response.when(
+      data: (response) {
+        return Center(
+          child: Text(
+            response.fullName,
+          ),
+        );
+      },
+      loading: () {
+        return const Center(
+          child: Text("Loading"),
+        );
+      },
+      error: (Object error, StackTrace? stackTrace) {
+        return Text(error.toString());
+      },
     );
   }
 }
