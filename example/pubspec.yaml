@@ -31,6 +31,7 @@ dependencies:
     sdk: flutter
   flutter_hooks: ^0.18.2
   http: ^0.13.4
+  hooks_riverpod: ^1.0.3
   flutter_fetch_hooks:
     path: ../packages/flutter_fetch_hooks
 

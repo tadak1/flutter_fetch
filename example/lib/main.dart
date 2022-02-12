@@ -2,14 +2,17 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_fetch/flutter_fetch.dart';
 import 'package:flutter_fetch_hooks/flutter_fetch_hooks.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:http/http.dart' as http;
-import "package:riverpod/riverpod.dart";
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends HookWidget {
@@ -54,9 +57,6 @@ class MyApp extends HookWidget {
   }
 }
 
-final fetchState = FetchState.initialize();
-final Map<String, dynamic> cache = {};
-
 class GithubModel {
   GithubModel({
     required this.fullName,
@@ -69,7 +69,7 @@ class GithubModel {
   }
 }
 
-class ResponseDisplayWidget extends HookWidget {
+class ResponseDisplayWidget extends HookConsumerWidget {
   const ResponseDisplayWidget({
     Key? key,
     required this.path,
@@ -77,10 +77,11 @@ class ResponseDisplayWidget extends HookWidget {
   final String path;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cache = ref.watch(fetchCacheProvider);
     final response = useFetch<GithubModel>(
       path,
-          (path) async {
+      (path) async {
         final uri = Uri.https("api.github.com", path);
         developer.log(
           "Request to ${uri.toString()}",
@@ -90,7 +91,6 @@ class ResponseDisplayWidget extends HookWidget {
         return GithubModel.fromJson(json);
       },
       cache: cache,
-      fetchState: fetchState,
       deduplicationInterval: const Duration(seconds: 5),
     );
     return response.when(
