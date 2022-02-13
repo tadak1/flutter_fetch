@@ -57,15 +57,15 @@ class MyApp extends HookWidget {
   }
 }
 
-class GithubModel {
-  GithubModel({
+class GithubRepositoryResponse {
+  GithubRepositoryResponse({
     required this.fullName,
   });
 
   String fullName;
 
-  factory GithubModel.fromJson(Map<String, dynamic> json) {
-    return GithubModel(fullName: json["full_name"]);
+  factory GithubRepositoryResponse.fromJson(Map<String, dynamic> json) {
+    return GithubRepositoryResponse(fullName: json["full_name"]);
   }
 }
 
@@ -79,7 +79,7 @@ class ResponseDisplayWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cache = ref.watch(fetchCacheProvider);
-    final response = useFetch<GithubModel>(
+    final response = useFetch<GithubRepositoryResponse>(
       path,
       (path) async {
         final uri = Uri.https("api.github.com", path);
@@ -88,7 +88,7 @@ class ResponseDisplayWidget extends HookConsumerWidget {
         );
         final result = await http.get(uri);
         final Map<String, dynamic> json = jsonDecode(result.body);
-        return GithubModel.fromJson(json);
+        return GithubRepositoryResponse.fromJson(json);
       },
       cache: cache,
       deduplicationInterval: const Duration(seconds: 5),
