@@ -78,10 +78,11 @@ class ResponseDisplayWidget extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cache = ref.watch(fetchCacheProvider);
+    final cache = ref.watch(dataCacheProvider);
     final response = useFetch<GithubRepositoryResponse>(
-      path,
-      (path) async {
+      ref.read,
+      path: path,
+      fetcher: (path) async {
         final uri = Uri.https("api.github.com", path);
         developer.log(
           "Request to ${uri.toString()}",
@@ -90,8 +91,7 @@ class ResponseDisplayWidget extends HookConsumerWidget {
         final Map<String, dynamic> json = jsonDecode(result.body);
         return GithubRepositoryResponse.fromJson(json);
       },
-      cache: cache,
-      deduplicationInterval: const Duration(seconds: 5),
+      deduplicationInterval: const Duration(seconds: 10),
     );
     return response.when(
       data: (response) {

@@ -11,11 +11,10 @@ import 'package:riverpod/riverpod.dart';
 
 import 'fetch_state.dart';
 
-final Cache defaultDataCache = <String, dynamic>{};
-
 AsyncValue<T> useFetch<T>(
-  String path,
-  Fetcher<T> fetcher, {
+  Reader reader, {
+  required String path,
+  required Fetcher<T> fetcher,
   T? fallbackData,
   Map<String, dynamic>? cache,
   FetchState? fetchState,
@@ -23,6 +22,7 @@ AsyncValue<T> useFetch<T>(
   Duration deduplicationInterval = const Duration(seconds: 2),
 }) {
   return use(_FetchStateHook(
+    reader: reader,
     path: path,
     fetcher: fetcher,
     dataCache: cache,
@@ -35,19 +35,20 @@ AsyncValue<T> useFetch<T>(
 
 class _FetchStateHook<T> extends Hook<AsyncValue<T>> {
   _FetchStateHook({
+    required this.reader,
     required this.path,
     required this.fetcher,
+    required this.dataCache,
     required this.fetchState,
     required this.deduplicationInterval,
     required this.retryOption,
     required this.fallbackData,
-    required Map<String, dynamic>? dataCache,
-  })  : _dataCache = dataCache ?? defaultDataCache,
-        super(keys: [path]);
+  }) : super(keys: [path]);
 
+  final Reader reader;
   final String path;
   final Fetcher<T> fetcher;
-  final Map<String, dynamic> _dataCache;
+  final Map<String, dynamic>? dataCache;
   final FetchState? fetchState;
   final Duration deduplicationInterval;
   final RetryOption? retryOption;
@@ -83,8 +84,7 @@ class _FetchStateHookState<T>
     if (hook.path.isEmpty) {
       return;
     }
-
-    final cache = hook._dataCache;
+    final cache = _readDataCache();
     var fetchState = globalCache[cache];
     if (fetchState == null) {
       fetchState = FetchState.initialize();
@@ -100,11 +100,12 @@ class _FetchStateHookState<T>
       );
     }
 
-    final dynamic cachedValue = hook._dataCache[hook.path];
-    if (cachedValue != null) {
-      _state = AsyncValue.data(cachedValue as T);
-    } else if (hook.fallbackData != null) {
-      _state = AsyncValue.data(hook.fallbackData!);
+    final dynamic cachedResult = cache[hook.path];
+    final fallbackData = hook.fallbackData;
+    if (cachedResult != null) {
+      _state = AsyncValue.data(cachedResult as T);
+    } else if (fallbackData != null) {
+      _state = AsyncValue.data(fallbackData);
     } else {
       _state = const AsyncValue.loading();
     }
@@ -138,6 +139,7 @@ class _FetchStateHookState<T>
     final dataCache = hook.reader(dataCacheProvider);
     return hook.dataCache ?? dataCache;
   }
+
   Stream<T> revalidateWithRetry(
     String path,
     Fetcher<T> fetcher, {
@@ -175,8 +177,9 @@ class _FetchStateHookState<T>
     required Fetcher<T> fetcher,
   }) {
     return () async {
+      final dataCache = _readDataCache();
       final resource = await fetcher(path);
-      hook._dataCache.update(
+      dataCache.update(
         path,
         (dynamic value) => resource,
         ifAbsent: () => resource,
