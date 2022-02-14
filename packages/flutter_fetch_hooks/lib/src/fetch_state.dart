@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:riverpod/riverpod.dart';
 
-typedef Cache = Map<String, dynamic>;
-typedef GlobalCache = Map<Cache, FetchState>;
+typedef DataCache = Map<String, dynamic>;
+typedef GlobalCache = Map<DataCache, FetchState>;
 
 class FetchState {
   FetchState({
@@ -23,6 +23,6 @@ class FetchState {
 }
 
 final GlobalCache globalCache = {};
-final fetchCacheProvider = Provider<Cache>((ref) {
+final dataCacheProvider = Provider<DataCache>((ref) {
   return <String, dynamic>{};
 });

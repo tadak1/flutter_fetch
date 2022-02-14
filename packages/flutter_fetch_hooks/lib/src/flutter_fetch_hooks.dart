@@ -134,6 +134,10 @@ class _FetchStateHookState<T>
     }
   }
 
+  DataCache _readDataCache() {
+    final dataCache = hook.reader(dataCacheProvider);
+    return hook.dataCache ?? dataCache;
+  }
   Stream<T> revalidateWithRetry(
     String path,
     Fetcher<T> fetcher, {
