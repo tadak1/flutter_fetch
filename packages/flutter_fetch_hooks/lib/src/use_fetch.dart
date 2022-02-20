@@ -11,6 +11,7 @@ import 'package:retry/retry.dart';
 import 'fetch_state.dart';
 import 'hash.dart';
 
+
 final FetcherState _globalFetcherCache = <String, DateTime>{};
 
 FetchState<T?> useFetch<T>({
@@ -28,13 +29,15 @@ FetchState<T?> useFetch<T>({
   ));
   final keysHashCode = convertToHash(keys);
   // ignore: omit_local_variable_types
-  final FetchState<T?> listenableValue = SharedAppData.getValue(
+  final InternalFetchState<T?> listenableValue = SharedAppData.getValue(
     context,
     keysHashCode,
-    () => FetchState(
-      value: fallbackData,
-      isValidating: false,
-    ),
+        () =>
+        InternalFetchState(
+          value: fallbackData,
+          isValidating: false,
+          expiredAt: null,
+        ),
   );
   final revalidate = _makeRevalidateFunc(
     path: keysHashCode,
@@ -42,7 +45,7 @@ FetchState<T?> useFetch<T>({
   );
 
   useEffect(() {
-    ref.value = listenableValue;
+    ref.value = listenableValue.toFetchState();
     return;
   }, [listenableValue]);
 
@@ -61,18 +64,22 @@ FetchState<T?> useFetch<T>({
         SharedAppData.setValue(
           context,
           keysHashCode,
-          FetchState(
+          InternalFetchState(
             value: fetchState.value,
             isValidating: true,
+            expiredAt: fetchState.expiredAt,
           ),
         );
         final result = await revalidate();
         SharedAppData.setValue(
           context,
           keysHashCode,
-          FetchState(
+          InternalFetchState(
             value: result,
             isValidating: false,
+            expiredAt: DateTime.now().add(
+              cacheTime,
+            ),
           ),
         );
       }
