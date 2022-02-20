@@ -94,14 +94,14 @@ class ResponseDisplayWidget extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final response = useFetch<GithubRepositoryResponse>(
+    final fetchState = useFetch<GithubRepositoryResponse>(
       path: path,
       fetcher: (path) => _fetchGithubRepositoryResponse(path),
       deduplicationInterval: const Duration(seconds: 10),
     );
     return Center(
       child: Text(
-        response?.fullName ?? "Initial",
+        fetchState.value?.fullName ?? "Initial",
       ),
     );
   }

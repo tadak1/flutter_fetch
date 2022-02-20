@@ -12,31 +12,23 @@ typedef FetcherState = Map<String, DateTime>;
 
 final FetcherState _globalCache = <String, DateTime>{};
 
-FutureReturned<T> _makeRevalidateFunc<T>(
-  BuildContext context, {
+FutureReturned<T> _makeRevalidateFunc<T>({
   required String path,
   required Fetcher<T> fetcher,
+  RetryOption? retryOption,
 }) {
   return () async {
-    final resource = await fetcher(path);
-    SharedAppData.setValue(context, path, resource);
-    return resource;
+    return revalidateWithRetry(path, fetcher, retryOption: retryOption);
   };
 }
 
 Future<T> revalidateWithRetry<T>(
-  BuildContext context,
   String path,
   Fetcher<T> fetcher, {
   RetryOption? retryOption,
 }) async {
-  final revalidate = _makeRevalidateFunc(
-    context,
-    path: path,
-    fetcher: fetcher,
-  );
   if (retryOption == null) {
-    return revalidate();
+    return fetcher(path);
   }
 
   final onRetry = retryOption.onRetry;
@@ -48,7 +40,7 @@ Future<T> revalidateWithRetry<T>(
   }
   return retry(
     () async {
-      return revalidate();
+      return fetcher(path);
     },
     retryIf: (exception) async {
       return await onRetry(path, exception);
@@ -57,7 +49,7 @@ Future<T> revalidateWithRetry<T>(
   );
 }
 
-T? useFetch<T>({
+FetchState<T?> useFetch<T>({
   required String path,
   required Fetcher<T> fetcher,
   T? fallbackData,
@@ -65,14 +57,21 @@ T? useFetch<T>({
   Duration deduplicationInterval = const Duration(seconds: 2),
 }) {
   final context = useContext();
-  final ref = useRef<T?>(null);
-  final listenableValue = SharedAppData.getValue(
+  final ref = useRef<FetchState<T?>>(const FetchState(
+    value: null,
+    isValidating: false,
+  ));
+
+  // ignore: omit_local_variable_types
+  final FetchState<T?> listenableValue = SharedAppData.getValue(
     context,
     path,
-    () => fallbackData,
+    () => FetchState(
+      value: fallbackData,
+      isValidating: false,
+    ),
   );
   final revalidate = _makeRevalidateFunc(
-    context,
     path: path,
     fetcher: fetcher,
   );
@@ -90,10 +89,38 @@ T? useFetch<T>({
         Timer(deduplicationInterval, () {
           _globalCache.remove(path);
         });
-        await revalidate();
+        final fetchState = ref.value;
+        SharedAppData.setValue(
+          context,
+          path,
+          FetchState(
+            value: fetchState.value,
+            isValidating: true,
+          ),
+        );
+        final result = await revalidate();
+        SharedAppData.setValue(
+          context,
+          path,
+          FetchState(
+            value: result,
+            isValidating: false,
+          ),
+        );
       }
     });
     return;
   }, [path]);
   return ref.value;
+}
+
+@immutable
+class FetchState<T> {
+  const FetchState({
+    required this.value,
+    required this.isValidating,
+  });
+
+  final T? value;
+  final bool isValidating;
 }
