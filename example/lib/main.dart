@@ -69,6 +69,22 @@ class GithubRepositoryResponse {
   }
 }
 
+Future<Map<String, dynamic>> _fetchGithub(String path) async {
+  final uri = Uri.https("api.github.com", path);
+  developer.log(
+    "Request to ${uri.toString()}",
+  );
+  final result = await http.get(uri);
+  final Map<String, dynamic> json = jsonDecode(result.body);
+  return json;
+}
+
+Future<GithubRepositoryResponse> _fetchGithubRepositoryResponse(
+    String path) async {
+  final json = await _fetchGithub(path);
+  return GithubRepositoryResponse.fromJson(json);
+}
+
 class ResponseDisplayWidget extends HookConsumerWidget {
   const ResponseDisplayWidget({
     Key? key,
@@ -78,37 +94,15 @@ class ResponseDisplayWidget extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cache = ref.watch(dataCacheProvider);
     final response = useFetch<GithubRepositoryResponse>(
-      ref.read,
       path: path,
-      fetcher: (path) async {
-        final uri = Uri.https("api.github.com", path);
-        developer.log(
-          "Request to ${uri.toString()}",
-        );
-        final result = await http.get(uri);
-        final Map<String, dynamic> json = jsonDecode(result.body);
-        return GithubRepositoryResponse.fromJson(json);
-      },
+      fetcher: (path) => _fetchGithubRepositoryResponse(path),
       deduplicationInterval: const Duration(seconds: 10),
     );
-    return response.when(
-      data: (response) {
-        return Center(
-          child: Text(
-            response.fullName,
-          ),
-        );
-      },
-      loading: () {
-        return const Center(
-          child: Text("Loading"),
-        );
-      },
-      error: (Object error, StackTrace? stackTrace) {
-        return Text(error.toString());
-      },
+    return Center(
+      child: Text(
+        response?.fullName ?? "Initial",
+      ),
     );
   }
 }
