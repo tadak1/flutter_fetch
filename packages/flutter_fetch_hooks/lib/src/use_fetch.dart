@@ -25,8 +25,7 @@ FetchState<T?> useFetch<T>({
     value: null,
     isValidating: false,
   ));
-  final buffer = StringBuffer();
-  final keysHashCode = convertToHash(buffer, keys);
+  final keysHashCode = convertToHash(keys);
   // ignore: omit_local_variable_types
   final FetchState<T?> listenableValue = SharedAppData.getValue(
     context,
