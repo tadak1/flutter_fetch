@@ -8,9 +8,76 @@ import 'package:flutter_fetch_hooks/src/type.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:retry/retry.dart';
 
-typedef FetcherState = Map<String, DateTime>;
+import 'fetch_state.dart';
+import 'hash.dart';
 
-final FetcherState _globalCache = <String, DateTime>{};
+final FetcherState _globalFetcherCache = <String, DateTime>{};
+
+FetchState<T?> useFetch<T>({
+  List<Object?> keys = const <Object?>[],
+  required Fetcher<T> fetcher,
+  T? fallbackData,
+  RetryOption? retryOption,
+  Duration deduplicationInterval = const Duration(seconds: 2),
+}) {
+  final context = useContext();
+  final ref = useRef<FetchState<T?>>(const FetchState(
+    value: null,
+    isValidating: false,
+  ));
+  final buffer = StringBuffer();
+  final keysHashCode = convertToHash(buffer, keys);
+  // ignore: omit_local_variable_types
+  final FetchState<T?> listenableValue = SharedAppData.getValue(
+    context,
+    keysHashCode,
+    () => FetchState(
+      value: fallbackData,
+      isValidating: false,
+    ),
+  );
+  final revalidate = _makeRevalidateFunc(
+    path: keysHashCode,
+    fetcher: fetcher,
+  );
+
+  useEffect(() {
+    ref.value = listenableValue;
+    return;
+  }, [listenableValue]);
+
+  useEffect(() {
+    Future(() async {
+      final fetchTimeStamp = _globalFetcherCache[keysHashCode];
+      if (fetchTimeStamp == null) {
+        _globalFetcherCache[keysHashCode] = DateTime.now();
+        Timer(deduplicationInterval, () {
+          _globalFetcherCache.remove(keysHashCode);
+        });
+        final fetchState = ref.value;
+        SharedAppData.setValue(
+          context,
+          keysHashCode,
+          FetchState(
+            value: fetchState.value,
+            isValidating: true,
+          ),
+        );
+        final result = await revalidate();
+        SharedAppData.setValue(
+          context,
+          keysHashCode,
+          FetchState(
+            value: result,
+            isValidating: false,
+          ),
+        );
+      }
+    });
+    return;
+  }, [keysHashCode]);
+  return ref.value;
+}
 
 FutureReturned<T> _makeRevalidateFunc<T>({
   required String path,
@@ -18,17 +85,16 @@ FutureReturned<T> _makeRevalidateFunc<T>({
   RetryOption? retryOption,
 }) {
   return () async {
-    return revalidateWithRetry(path, fetcher, retryOption: retryOption);
+    return revalidateWithRetry(fetcher, retryOption: retryOption);
   };
 }
 
 Future<T> revalidateWithRetry<T>(
-  String path,
   Fetcher<T> fetcher, {
   RetryOption? retryOption,
 }) async {
   if (retryOption == null) {
-    return fetcher(path);
+    return fetcher();
   }
 
   final onRetry = retryOption.onRetry;
@@ -40,87 +106,11 @@ Future<T> revalidateWithRetry<T>(
   }
   return retry(
     () async {
-      return fetcher(path);
+      return fetcher();
     },
     retryIf: (exception) async {
-      return await onRetry(path, exception);
+      return await onRetry(exception);
     },
     maxAttempts: retryOption.maxRetryAttempts,
   );
-}
-
-FetchState<T?> useFetch<T>({
-  required String path,
-  required Fetcher<T> fetcher,
-  T? fallbackData,
-  RetryOption? retryOption,
-  Duration deduplicationInterval = const Duration(seconds: 2),
-}) {
-  final context = useContext();
-  final ref = useRef<FetchState<T?>>(const FetchState(
-    value: null,
-    isValidating: false,
-  ));
-
-  // ignore: omit_local_variable_types
-  final FetchState<T?> listenableValue = SharedAppData.getValue(
-    context,
-    path,
-    () => FetchState(
-      value: fallbackData,
-      isValidating: false,
-    ),
-  );
-  final revalidate = _makeRevalidateFunc(
-    path: path,
-    fetcher: fetcher,
-  );
-
-  useEffect(() {
-    ref.value = listenableValue;
-    return;
-  }, [listenableValue]);
-
-  useEffect(() {
-    Future(() async {
-      final fetchTimeStamp = _globalCache[path];
-      if (fetchTimeStamp == null) {
-        _globalCache[path] = DateTime.now();
-        Timer(deduplicationInterval, () {
-          _globalCache.remove(path);
-        });
-        final fetchState = ref.value;
-        SharedAppData.setValue(
-          context,
-          path,
-          FetchState(
-            value: fetchState.value,
-            isValidating: true,
-          ),
-        );
-        final result = await revalidate();
-        SharedAppData.setValue(
-          context,
-          path,
-          FetchState(
-            value: result,
-            isValidating: false,
-          ),
-        );
-      }
-    });
-    return;
-  }, [path]);
-  return ref.value;
-}
-
-@immutable
-class FetchState<T> {
-  const FetchState({
-    required this.value,
-    required this.isValidating,
-  });
-
-  final T? value;
-  final bool isValidating;
 }

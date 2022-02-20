@@ -1,7 +1,6 @@
 import 'dart:async';
 
 typedef OnRetry = FutureOr<bool> Function(
-  String key,
   Exception exception,
 );
 

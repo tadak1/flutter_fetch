@@ -17,8 +17,8 @@ void main() {
 
 class MyApp extends HookWidget {
   const MyApp({Key? key}) : super(key: key);
-  final flutterPluginsRepositoryPath = "/repos/flutter/plugins";
-  final flutterRepositoryPath = "/repos/flutter/flutter";
+  final flutterPluginsRepositoryPath = "/flutter/plugins";
+  final flutterRepositoryPath = "/flutter/flutter";
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +81,7 @@ Future<Map<String, dynamic>> _fetchGithub(String path) async {
 
 Future<GithubRepositoryResponse> _fetchGithubRepositoryResponse(
     String path) async {
-  final json = await _fetchGithub(path);
+  final json = await _fetchGithub("/repos" + path);
   return GithubRepositoryResponse.fromJson(json);
 }
 
@@ -95,8 +95,14 @@ class ResponseDisplayWidget extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fetchState = useFetch<GithubRepositoryResponse>(
-      path: path,
-      fetcher: (path) => _fetchGithubRepositoryResponse(path),
+      keys: [
+        "/repos",
+        path,
+        null,
+        ["1", "2"],
+        {"Key", "Value"},
+      ],
+      fetcher: () => _fetchGithubRepositoryResponse(path),
       deduplicationInterval: const Duration(seconds: 10),
     );
     return Center(
