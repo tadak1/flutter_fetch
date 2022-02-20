@@ -19,6 +19,7 @@ FetchState<T?> useFetch<T>({
   T? fallbackData,
   RetryOption? retryOption,
   Duration deduplicationInterval = const Duration(seconds: 2),
+  bool shouldStartedFetch = true,
 }) {
   final context = useContext();
   final ref = useRef<FetchState<T?>>(const FetchState(
@@ -46,6 +47,9 @@ FetchState<T?> useFetch<T>({
   }, [listenableValue]);
 
   useEffect(() {
+    if (!shouldStartedFetch) {
+      return;
+    }
     Future(() async {
       final fetchTimeStamp = _globalFetcherCache[keysHashCode];
       if (fetchTimeStamp == null) {
@@ -74,7 +78,7 @@ FetchState<T?> useFetch<T>({
       }
     });
     return;
-  }, [keysHashCode]);
+  }, [keysHashCode, shouldStartedFetch]);
   return ref.value;
 }
 
