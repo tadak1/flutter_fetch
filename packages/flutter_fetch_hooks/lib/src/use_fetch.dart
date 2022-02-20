@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ FetchState<T?> useFetch<T>({
   required Fetcher<T> fetcher,
   T? fallbackData,
   RetryOption? retryOption,
-  Duration deduplicationInterval = const Duration(seconds: 2),
+  Duration cacheTime = Duration.zero,
   bool shouldStartedFetch = true,
 }) {
   final context = useContext();
@@ -54,13 +55,26 @@ FetchState<T?> useFetch<T>({
       return;
     }
     Future(() async {
-      final fetchTimeStamp = _globalFetcherCache[keysHashCode];
-      if (fetchTimeStamp == null) {
+      final isFetching = _globalFetcherCache[keysHashCode] != null;
+      if (isFetching) {
+        developer.log("${DateTime.now()} [Fetching] hashCode: ${keysHashCode}");
+        return;
+      }
+
+      final fetchState = listenableValue;
+      if (fetchState.value != null &&
+          fetchState.expiredAt != null &&
+          fetchState.expiredAt!.isAfter(DateTime.now())) {
+        developer.log(
+            "${DateTime.now()} [Cached Value] hashCode: ${keysHashCode}");
+        return;
+      }
+
+      final fetchedAt = _globalFetcherCache[keysHashCode];
+      if (fetchedAt == null) {
         _globalFetcherCache[keysHashCode] = DateTime.now();
-        Timer(deduplicationInterval, () {
-          _globalFetcherCache.remove(keysHashCode);
-        });
-        final fetchState = ref.value;
+        developer.log(
+            "${DateTime.now()} [Starting fetch] hashCode: ${keysHashCode}");
         SharedAppData.setValue(
           context,
           keysHashCode,
@@ -82,6 +96,9 @@ FetchState<T?> useFetch<T>({
             ),
           ),
         );
+        developer.log(
+            "${DateTime.now()} [Remove fetcher] hashCode: ${keysHashCode}");
+        _globalFetcherCache.remove(keysHashCode);
       }
     });
     return;
@@ -99,8 +116,7 @@ FutureReturned<T> _makeRevalidateFunc<T>({
   };
 }
 
-Future<T> revalidateWithRetry<T>(
-  Fetcher<T> fetcher, {
+Future<T> revalidateWithRetry<T>(Fetcher<T> fetcher, {
   RetryOption? retryOption,
 }) async {
   if (retryOption == null) {
@@ -115,7 +131,7 @@ Future<T> revalidateWithRetry<T>(
     throw ArgumentError('maxRetryAttempts are not specified.');
   }
   return retry(
-    () async {
+        () async {
       return fetcher();
     },
     retryIf: (exception) async {

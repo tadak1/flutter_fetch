@@ -103,7 +103,7 @@ class ResponseDisplayWidget extends HookConsumerWidget {
         {"Key", "Value"},
       ],
       fetcher: () => _fetchGithubRepositoryResponse(path),
-      deduplicationInterval: const Duration(seconds: 10),
+      cacheTime: const Duration(seconds: 10),
     );
     return Center(
       child: Text(
