@@ -4,10 +4,12 @@ import 'package:flutter/foundation.dart';
 class FetchState<T> {
   const FetchState({
     required this.value,
-    required this.isValidating,
+    this.exception,
+    this.isValidating = false,
   });
 
   final T? value;
+  final Exception? exception;
   final bool isValidating;
 }
 
@@ -15,17 +17,20 @@ class FetchState<T> {
 class InternalFetchState<T> {
   const InternalFetchState({
     required this.value,
-    required this.isValidating,
-    required this.expiredAt,
+    this.exception,
+    this.isValidating = false,
+    this.expiredAt,
   });
 
   final T? value;
+  final Exception? exception;
   final bool isValidating;
   final DateTime? expiredAt;
 
   FetchState<T> toFetchState() {
     return FetchState<T>(
       value: value,
+      exception: exception,
       isValidating: isValidating,
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
@@ -104,7 +105,18 @@ class ResponseDisplayWidget extends HookConsumerWidget {
       ],
       fetcher: () => _fetchGithubRepositoryResponse(path),
       cacheTime: const Duration(seconds: 10),
+      retryOption: RetryOption(
+        maxRetryAttempts: 1,
+        onRetry: (exception) => exception is TimeoutException,
+      ),
     );
+    if (fetchState.exception != null) {
+      return Center(
+        child: Text(
+          fetchState.exception.toString(),
+        ),
+      );
+    }
     return Center(
       child: Text(
         fetchState.value?.fullName ?? "Initial",
