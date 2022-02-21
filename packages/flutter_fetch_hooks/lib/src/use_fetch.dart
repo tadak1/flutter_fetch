@@ -32,11 +32,10 @@ FetchState<T?> useFetch<T>({
   final InternalFetchState<T?> listenableValue = SharedAppData.getValue(
     context,
     keysHashCode,
-        () =>
-        InternalFetchState(
-          value: fallbackData,
-          expiredAt: null,
-        ),
+    () => InternalFetchState(
+      value: fallbackData,
+      expiredAt: null,
+    ),
   );
   final revalidate = _makeRevalidateFunc(
     path: keysHashCode,
@@ -120,7 +119,8 @@ FutureReturned<T> _makeRevalidateFunc<T>({
   };
 }
 
-Future<T> revalidateWithRetry<T>(Fetcher<T> fetcher, {
+Future<T> revalidateWithRetry<T>(
+  Fetcher<T> fetcher, {
   RetryOption? retryOption,
 }) async {
   if (retryOption == null) {
@@ -135,7 +135,7 @@ Future<T> revalidateWithRetry<T>(Fetcher<T> fetcher, {
     throw ArgumentError('maxRetryAttempts are not specified.');
   }
   return retry(
-        () async {
+    () async {
       return fetcher();
     },
     retryIf: (exception) async {
