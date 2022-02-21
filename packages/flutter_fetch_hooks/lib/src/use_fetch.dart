@@ -89,7 +89,10 @@ FetchState<T?> useFetch<T>({
             ),
           );
         } on Exception catch (exception, _) {
-          logger.log('Exception has occurred hashCode=$keysHashCode');
+          logger.logError(
+            'Exception has occurred hashCode=$keysHashCode',
+            exception,
+          );
           internalFetchState = InternalFetchState(
             value: null,
             exception: exception,
