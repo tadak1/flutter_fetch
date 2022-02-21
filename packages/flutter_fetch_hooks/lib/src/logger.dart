@@ -3,9 +3,10 @@ import 'package:logging/logging.dart';
 
 const loggerName = 'flutter fetch';
 
-void log(String message, {
+void log(
+  String message, {
   DateTime? time,
-  level = Level.INFO,
+  Level level = Level.INFO,
 }) {
   developer.log(
     '[${level.name}] ${DateTime.now()} $message',
@@ -15,9 +16,11 @@ void log(String message, {
   );
 }
 
-void logError(String message, Exception exception, {
+void logError(
+  String message,
+  Exception exception, {
   DateTime? time,
-  level = Level.SHOUT,
+  Level level = Level.SHOUT,
 }) {
   developer.log(
     '[${level.name}] ${DateTime.now()} $message',
